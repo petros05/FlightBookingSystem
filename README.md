@@ -147,4 +147,4 @@ This project is licensed under the MIT License. See LICENSE for details.
 
 ## Contact
 
-For questions or issues, contact [Your Name] at [your.email@example.com].
+For questions or issues, contact Petros Abraha at [petrosdawit00@gmail.com].
