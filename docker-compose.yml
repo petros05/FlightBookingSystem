@@ -5,9 +5,13 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/userdb
+      - DB_HOST=postgres
+      - DB_NAME=flightbooking_users
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - JWT_SECRET=your_secret_key
     depends_on:
-      - mongo
+      - postgres
 
   flight-service:
     build: ./services/flight-service
@@ -46,6 +50,17 @@ services:
       - booking-service
       - admin-service
 
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=flightbooking_users
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   mongo:
     image: mongo:5.0
     ports:
@@ -54,4 +69,5 @@ services:
       - mongo-data:/data/db
 
 volumes:
+  postgres-data:
   mongo-data:
