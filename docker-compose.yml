@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/userdb
+    depends_on:
+      - mongo
+
+  flight-service:
+    build: ./services/flight-service
+    ports:
+      - "3002:3002"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/flightdb
+    depends_on:
+      - mongo
+
+  booking-service:
+    build: ./services/booking-service
+    ports:
+      - "3003:3003"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/bookingdb
+    depends_on:
+      - mongo
+
+  admin-service:
+    build: ./services/admin-service
+    ports:
+      - "3004:3004"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/admindb
+    depends_on:
+      - mongo
+
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - flight-service
+      - booking-service
+      - admin-service
+
+  mongo:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
