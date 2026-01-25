@@ -4,24 +4,42 @@ import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const [form, setForm] = useState({ userName: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError('');
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const result = await login(form.userName, form.password);
-    if (result.success) {
-      navigate('/');
-    } else {
-      alert(result.message);
+    setError('');
+    setLoading(true);
+    try {
+      const result = await login(form.userName, form.password);
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div>
       <h1>Login</h1>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
       <div className="row">
         <form className="col-md-4" onSubmit={onSubmit}>
           <div className="form-group">
@@ -34,6 +52,7 @@ function Login() {
               value={form.userName}
               onChange={onChange}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -46,9 +65,12 @@ function Login() {
               value={form.password}
               onChange={onChange}
               required
+              disabled={loading}
             />
           </div>
-          <button className="btn btn-primary" type="submit">Login</button>
+          <button className="btn btn-primary" type="submit" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
           <Link className="btn btn-link" to="/register">Don't have an account?</Link>
         </form>
       </div>

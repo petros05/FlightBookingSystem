@@ -20,7 +20,7 @@ function OrdersList() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get('/orders/passenger');
+      const res = await api.get('/api/orders/passenger');
       setOrders(res.data);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to load orders');
@@ -34,7 +34,7 @@ function OrdersList() {
       return;
     }
     try {
-      await api.patch(`/orders/${orderId}/cancel`);
+      await api.patch(`/api/orders/${orderId}/cancel`);
       alert('Order cancelled successfully!');
       fetchOrders();
     } catch (error) {
@@ -47,7 +47,7 @@ function OrdersList() {
       return;
     }
     try {
-      await api.patch(`/orders/${orderId}/pay`);
+      await api.patch(`/api/orders/${orderId}/pay`);
       alert('Payment successful!');
       fetchOrders();
     } catch (error) {

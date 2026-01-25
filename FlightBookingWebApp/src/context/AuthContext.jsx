@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const response = await api.get('/auth/me');
+      const response = await api.get('/api/auth/me');
       setUser(response.data);
     } catch (error) {
       localStorage.removeItem('token');
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userName, password) => {
     try {
-      const response = await api.post('/auth/login', { userName, password });
+      const response = await api.post('/api/auth/login', { userName, password });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       setUser(user);
@@ -46,18 +46,19 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Login failed' 
+        message: error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || error.message || 'Login failed. Please check your connection and try again.' 
       };
     }
   };
 
   const register = async (userName, password, displayName, identityNumber) => {
     try {
-      const response = await api.post('/auth/register', {
+      const response = await api.post('/api/auth/register', {
         userName,
         password,
         displayName,
-        identityNumber
+        identityNumber,
+        role: 'Passenger' // Default role
       });
       const { token, user } = response.data;
       localStorage.setItem('token', token);
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
+        message: error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || error.message || 'Registration failed. Please check your connection and try again.' 
       };
     }
   };

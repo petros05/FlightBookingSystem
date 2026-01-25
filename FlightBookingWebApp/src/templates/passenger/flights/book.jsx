@@ -19,7 +19,7 @@ function BookFlight() {
   useEffect(() => {
     const fetchFlight = async () => {
       try {
-        const res = await api.get(`/flights/${id}`);
+        const res = await api.get(`/api/flights/${id}`);
         setFlight(res.data);
       } catch (error) {
         setError('Failed to load flight details');
@@ -35,11 +35,16 @@ function BookFlight() {
       if (!id) return;
       try {
         setLoadingSeats(true);
-        const res = await api.get(`/orders/flight/${id}/seats`);
+        setError(''); // Clear previous errors
+        const res = await api.get(`/api/orders/flight/${id}/seats`);
         setAvailableSeats(res.data.availableSeats || []);
         setTakenSeats(res.data.takenSeats || []);
       } catch (error) {
-        console.error('Error fetching seats:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to load available seats. Please try again.';
+        setError(errorMessage);
+        // Set empty arrays on error to prevent showing "No available seats" incorrectly
+        setAvailableSeats([]);
+        setTakenSeats([]);
       } finally {
         setLoadingSeats(false);
       }
@@ -67,11 +72,16 @@ function BookFlight() {
     setBooking(true);
     setError('');
     try {
-      await api.post('/orders', { flightId: id, seat: selectedSeat });
+      const response = await api.post('/api/orders', { flightId: id, seat: selectedSeat });
       alert('Flight booked successfully!');
       navigate('/passenger/orders');
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to book flight');
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to book flight';
+      setError(errorMessage);
+      // If it's an auth error, redirect to login
+      if (error.response?.status === 401) {
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } finally {
       setBooking(false);
     }
@@ -219,7 +229,7 @@ function BookFlight() {
             <button 
               className="btn btn-success btn-lg" 
               onClick={handleBook}
-              disabled={booking || !selectedSeat || (!flight.remainingSeats && flight.capacity)}
+              disabled={booking || !selectedSeat || availableSeats.length === 0}
             >
               {booking ? 'Booking...' : 'Confirm Booking'}
             </button>

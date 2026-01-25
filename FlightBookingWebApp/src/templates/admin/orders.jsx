@@ -10,10 +10,10 @@ function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await api.get('/admin/orders');
+      const res = await api.get('/api/admin/orders');
       setOrders(res.data);
     } catch (error) {
-      console.error(error);
+      // Error fetching orders
     }
   };
 

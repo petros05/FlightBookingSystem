@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000', // API Gateway base URL
 });
 
 // Add token to requests if available
@@ -20,11 +20,14 @@ api.interceptors.request.use(
 
 // Handle 401 errors - don't redirect on login/register pages
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+      // Don't redirect if already on login or register pages
+      if (currentPath !== '/login' && currentPath !== '/register') {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('displayName');

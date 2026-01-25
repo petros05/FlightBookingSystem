@@ -1,61 +1,58 @@
 const express = require('express');
+const cors = require('cors');
 const sequelize = require('./src/config/database');
 const User = require('./src/models/User');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { ensureDatabaseExists } = require('./src/utils/db-init');
+const { initAdmin } = require('./src/utils/init-admin');
 require('dotenv').config();
 
+const PORT = process.env.PORT || 3001;
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Sync database
-sequelize.sync().then(() => console.log('Database synced'));
+// Initialize database and admin user on startup
+(async () => {
+  try {
+    await ensureDatabaseExists();
+    await sequelize.authenticate();
+    
+    // Initialize admin user if it doesn't exist
+    const adminResult = await initAdmin();
+    if (adminResult.created) {
+      // Only log in development or if explicitly enabled
+      if (process.env.NODE_ENV !== 'production' || process.env.LOG_ADMIN_CREATION === 'true') {
+        // Admin created - credentials logged only in dev or when explicitly enabled
+      }
+    }
+  } catch (error) {
+    // Database connection will be retried
+  }
+})();
+
 
 // Routes
 app.get('/', (req, res) => res.send('User Service Running'));
 
-// Register
-app.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, role = 'passenger' } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword, role });
-    res.status(201).json({ message: 'User registered', user: { id: user.id, name, email, role } });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+// Import routes
+const registerRoute = require('./src/routes/register');
+const loginRoute = require('./src/routes/login');
+const forgetPasswordRoute = require('./src/routes/forgetPassword');
+const getAllUsersRoute = require('./src/routes/getAllUsers');
+const meRoute = require('./src/routes/me');
+const findByIdentityCardRoute = require('./src/routes/findByIdentityCard');
+const registerByAdminRoute = require('./src/routes/registerByAdmin');
+const createAdminRoute = require('./src/routes/createAdmin');
 
-// Login
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET || 'secret');
-    res.json({ token, user: { id: user.id, name: user.name, email, role: user.role } });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+app.use('/register', registerRoute);
+app.use('/login', loginRoute);
+app.use('/forget-password', forgetPasswordRoute);
+app.use('/admin/passengers', getAllUsersRoute);
+app.use('/me', meRoute);
+app.use('/find-by-identity', findByIdentityCardRoute);
+app.use('/register-by-admin', registerByAdminRoute);
+app.use('/create-admin', createAdminRoute);
 
-// Profile
-app.get('/profile', async (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token' });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    const user = await User.findByPk(decoded.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));
+app.listen(PORT, () => {
+  // User service running
+})

@@ -1,57 +1,8 @@
-version: '3.8'
 services:
-  user-service:
-    build: ./services/user-service
-    ports:
-      - "3001:3001"
-    environment:
-      - DB_HOST=postgres
-      - DB_NAME=flightbooking_users
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - JWT_SECRET=your_secret_key
-    depends_on:
-      - postgres
-
-  flight-service:
-    build: ./services/flight-service
-    ports:
-      - "3002:3002"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/flightdb
-    depends_on:
-      - mongo
-
-  booking-service:
-    build: ./services/booking-service
-    ports:
-      - "3003:3003"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/bookingdb
-    depends_on:
-      - mongo
-
-  admin-service:
-    build: ./services/admin-service
-    ports:
-      - "3004:3004"
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/admindb
-    depends_on:
-      - mongo
-
-  api-gateway:
-    build: ./services/api-gateway
-    ports:
-      - "3000:3000"
-    depends_on:
-      - user-service
-      - flight-service
-      - booking-service
-      - admin-service
-
+  # PostgreSQL Database for User Service
   postgres:
     image: postgres:15
+    container_name: flightbooking-postgres
     ports:
       - "5432:5432"
     environment:
@@ -60,14 +11,140 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MongoDB Database for Flight and Booking Services
   mongo:
     image: mongo:5.0
+    container_name: flightbooking-mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep mongod || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # User Service (PostgreSQL)
+  user-service:
+    build: ./services/user-service
+    container_name: flightbooking-user-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flightbooking_users
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - JWT_SECRET=your-secret-key-change-this-in-production
+      # Admin user initialization (optional - defaults shown)
+      - ADMIN_USERNAME=admin123456
+      - ADMIN_PASSWORD=admin123456
+      - ADMIN_DISPLAY_NAME=System Administrator
+      - LOG_ADMIN_CREATION=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Flight Service (MongoDB)
+  flight-service:
+    build: ./services/flight-service
+    container_name: flightbooking-flight-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGO_URI=mongodb://mongo:27017/flightbooking
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Booking Service (MongoDB)
+  booking-service:
+    build: ./services/booking-service
+    container_name: flightbooking-booking-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - MONGO_URI=mongodb://mongo:27017/flightbooking
+      - FLIGHT_SERVICE_URL=http://flight-service:3002
+    depends_on:
+      mongo:
+        condition: service_healthy
+      flight-service:
+        condition: service_started
+    restart: unless-stopped
+
+  # Admin Service
+  admin-service:
+    build: ./services/admin-service
+    container_name: flightbooking-admin-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - FLIGHT_SERVICE_URL=http://flight-service:3002
+      - BOOKING_SERVICE_URL=http://booking-service:3003
+      - USER_SERVICE_URL=http://user-service:3001
+    depends_on:
+      - user-service
+      - flight-service
+      - booking-service
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: flightbooking-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3001
+      - FLIGHT_SERVICE_URL=http://flight-service:3002
+      - BOOKING_SERVICE_URL=http://booking-service:3003
+      - ADMIN_SERVICE_URL=http://admin-service:3004
+    depends_on:
+      - user-service
+      - flight-service
+      - booking-service
+      - admin-service
+    restart: unless-stopped
+
+  # Frontend (React App)
+  frontend:
+    build:
+      context: ./FlightBookingWebApp
+      args:
+        - VITE_API_URL=http://localhost:3000
+    container_name: flightbooking-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
 
 volumes:
   postgres-data:
   mongo-data:
+
+networks:
+  default:
+    name: flightbooking-network

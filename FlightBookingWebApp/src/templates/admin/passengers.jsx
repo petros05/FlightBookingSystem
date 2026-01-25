@@ -10,10 +10,10 @@ function AdminPassengers() {
 
   const fetchPassengers = async () => {
     try {
-      const res = await api.get('/admin/passengers');
+      const res = await api.get('/api/admin/passengers');
       setPassengers(res.data);
     } catch (error) {
-      console.error(error);
+      // Error fetching passengers
     }
   };
 

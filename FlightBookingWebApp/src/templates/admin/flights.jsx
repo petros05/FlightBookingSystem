@@ -5,6 +5,11 @@ function AdminFlights() {
   const [flights, setFlights] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingFlight, setBookingFlight] = useState(null);
+  const [availableSeats, setAvailableSeats] = useState([]);
+  const [loadingSeats, setLoadingSeats] = useState(false);
+  const [booking, setBooking] = useState(false);
   const [form, setForm] = useState({
     flightNumber: '',
     price: '',
@@ -14,6 +19,11 @@ function AdminFlights() {
     destination: '',
     capacity: ''
   });
+  const [bookingForm, setBookingForm] = useState({
+    identityCardNumber: '',
+    displayName: '',
+    seat: ''
+  });
 
   useEffect(() => {
     fetchFlights();
@@ -21,11 +31,15 @@ function AdminFlights() {
 
   const fetchFlights = async () => {
     try {
-      const res = await api.get('/admin/flights');
-      setFlights(res.data);
+      const res = await api.get('/api/admin/flights');
+      if (res.data && Array.isArray(res.data)) {
+        setFlights(res.data);
+      } else {
+        setFlights([]);
+      }
     } catch (error) {
-      console.error('Error fetching flights:', error);
       alert(error.response?.data?.message || 'Error loading flights');
+      setFlights([]);
     }
   };
 
@@ -42,9 +56,9 @@ function AdminFlights() {
       };
 
       if (editing) {
-        await api.put(`/admin/flights/${editing.id}`, flightData);
+        await api.put(`/api/flights/${editing.id}`, flightData);
       } else {
-        await api.post('/admin/flights', flightData);
+        await api.post('/api/flights', flightData);
       }
       setShowForm(false);
       setEditing(null);
@@ -91,7 +105,7 @@ function AdminFlights() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure?')) return;
     try {
-      await api.delete(`/admin/flights/${id}`);
+      await api.delete(`/api/flights/${id}`);
       fetchFlights();
     } catch (error) {
       alert('Error deleting flight');
@@ -100,10 +114,66 @@ function AdminFlights() {
 
   const togglePublish = async (id, isPublished) => {
     try {
-      await api.patch(`/admin/flights/${id}`, { isPublished: !isPublished });
+      await api.patch(`/api/flights/${id}`, { isPublished: !isPublished });
       fetchFlights();
     } catch (error) {
       alert('Error updating flight');
+    }
+  };
+
+  const handleBookForPassenger = async (flight) => {
+    setBookingFlight(flight);
+    setShowBookingModal(true);
+    setBookingForm({
+      identityCardNumber: '',
+      displayName: '',
+      seat: ''
+    });
+    
+    // Fetch available seats
+    setLoadingSeats(true);
+    try {
+      const res = await api.get(`/api/orders/flight/${flight.id}/seats`);
+      setAvailableSeats(res.data.availableSeats || []);
+    } catch (error) {
+      alert('Failed to load available seats');
+      setAvailableSeats([]);
+    } finally {
+      setLoadingSeats(false);
+    }
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!bookingForm.identityCardNumber || !bookingForm.displayName) {
+      alert('Please enter passenger identity card number and name');
+      return;
+    }
+
+    setBooking(true);
+    try {
+      const bookingData = {
+        flightId: bookingFlight.id,
+        identityCardNumber: bookingForm.identityCardNumber,
+        displayName: bookingForm.displayName,
+        seat: bookingForm.seat ? parseInt(bookingForm.seat) : undefined
+      };
+
+      const res = await api.post('/api/admin/book-flight', bookingData);
+      alert('Flight booked successfully!');
+      setShowBookingModal(false);
+      setBookingFlight(null);
+      setBookingForm({
+        identityCardNumber: '',
+        displayName: '',
+        seat: ''
+      });
+      fetchFlights(); // Refresh flights to update remaining seats
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to book flight');
+    } finally {
+      setBooking(false);
     }
   };
 
@@ -197,7 +267,15 @@ function AdminFlights() {
                   </button>
                 </td>
                 <td>
-                  <button className="btn btn-sm btn-info" onClick={() => handleEdit(flight)}>Edit</button>
+                  <button 
+                    className="btn btn-sm btn-primary" 
+                    onClick={() => handleBookForPassenger(flight)} 
+                    style={{ marginRight: '5px' }}
+                    title="Book this flight for a passenger"
+                  >
+                    Book for Passenger
+                  </button>
+                  <button className="btn btn-sm btn-info" onClick={() => handleEdit(flight)} style={{ marginRight: '5px' }}>Edit</button>
                   <button className="btn btn-sm btn-danger" onClick={() => handleDelete(flight.id)}>Delete</button>
                 </td>
               </tr>
@@ -205,6 +283,85 @@ function AdminFlights() {
           )}
         </tbody>
       </table>
+
+      {/* Booking Modal */}
+      {showBookingModal && bookingFlight && (
+        <div className="modal" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Book Flight for Passenger</h5>
+                <button type="button" className="close" onClick={() => setShowBookingModal(false)}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <form onSubmit={handleBookingSubmit}>
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Flight</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={`${bookingFlight.flightNumber} - ${bookingFlight.origin} to ${bookingFlight.destination}`}
+                      disabled 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Passenger Identity Card Number *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={bookingForm.identityCardNumber}
+                      onChange={(e) => setBookingForm({...bookingForm, identityCardNumber: e.target.value})}
+                      required 
+                      placeholder="Enter passenger ID card number"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Passenger Name *</label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={bookingForm.displayName}
+                      onChange={(e) => setBookingForm({...bookingForm, displayName: e.target.value})}
+                      required 
+                      placeholder="Enter passenger full name"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Seat Number (Optional)</label>
+                    {loadingSeats ? (
+                      <div>Loading available seats...</div>
+                    ) : (
+                      <select 
+                        className="form-control" 
+                        value={bookingForm.seat}
+                        onChange={(e) => setBookingForm({...bookingForm, seat: e.target.value})}
+                      >
+                        <option value="">Auto-assign</option>
+                        {availableSeats.map(seat => (
+                          <option key={seat} value={seat}>Seat {seat}</option>
+                        ))}
+                      </select>
+                    )}
+                    {availableSeats.length > 0 && (
+                      <small className="form-text text-muted">
+                        {availableSeats.length} seats available. Leave empty for auto-assignment.
+                      </small>
+                    )}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowBookingModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={booking}>
+                    {booking ? 'Booking...' : 'Book Flight'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
