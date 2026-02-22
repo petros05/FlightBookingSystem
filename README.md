@@ -2,7 +2,7 @@
 
 A full-stack microservices-based web application for booking flights, managing users, and handling orders. Built with Node.js/Express backend services and a React/Vite frontend.
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -22,7 +22,7 @@ A full-stack microservices-based web application for booking flights, managing u
 - [Contributing](#contributing)
 - [License](#license)
 
-## 🎯 Overview
+## Overview
 
 The Flight Booking System is a microservices-based application that allows users to:
 - Browse and search for available flights
@@ -32,7 +32,7 @@ The Flight Booking System is a microservices-based application that allows users
 
 The system is built using a microservices architecture with separate services for user management, flight management, booking operations, and admin functions, all orchestrated through an API Gateway.
 
-## 🏗️ Architecture
+## Architecture
 
 The application follows a **microservices architecture** with the following services:
 
@@ -76,7 +76,7 @@ The application follows a **microservices architecture** with the following serv
 - **PostgreSQL**: Stores user data (authentication, profiles)
 - **MongoDB**: Stores flight and booking data
 
-## ✨ Features
+## Features
 
 ### User Features
 - ✅ User registration and authentication
@@ -104,7 +104,7 @@ The application follows a **microservices architecture** with the following serv
 - ✅ Automatic admin user creation
 - ✅ Seat availability tracking
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **Node.js** (v18+)
@@ -261,7 +261,7 @@ FlightBookingWebjs/
                 └── bookFlight.js   # Book for passenger
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js** v18 or higher
 - **npm** or **yarn**
@@ -269,7 +269,7 @@ FlightBookingWebjs/
 - **PostgreSQL** (for local development without Docker)
 - **MongoDB** (for local development without Docker)
 
-## 🚀 Installation
+## Installation
 
 ### Docker Setup (Recommended)
 
@@ -383,7 +383,7 @@ CREATE DATABASE flightbooking_users;
 # Database will be created automatically
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -425,7 +425,7 @@ In `docker-compose.yml`, you can override environment variables. For production:
 - Update admin credentials
 - Configure proper CORS origins
 
-## 📚 API Documentation
+## API Documentation
 
 ### Base URL
 - **Development**: `http://localhost:3000`
@@ -554,7 +554,7 @@ Response:
 }
 ```
 
-## 📖 Usage Guide
+## Usage Guide
 
 ### For Passengers
 
@@ -578,18 +578,18 @@ Response:
 4. **Manage Passengers**: View all registered passengers
 5. **Book for Passenger**: Book flights on behalf of passengers
 
-## 🔒 Security
+## Security
 
 ### Security Features
 
-- ✅ Password hashing with bcrypt (10 rounds)
-- ✅ JWT token authentication
-- ✅ Role-based access control
-- ✅ Input validation with express-validator
-- ✅ CORS configuration
-- ✅ Environment variable protection
-- ✅ SQL injection prevention (Sequelize ORM)
-- ✅ NoSQL injection prevention (Mongoose ODM)
+- Password hashing with bcrypt (10 rounds)
+- JWT token authentication
+- Role-based access control
+- Input validation with express-validator
+- CORS configuration
+- Environment variable protection
+- SQL injection prevention (Sequelize ORM)
+- NoSQL injection prevention (Mongoose ODM)
 
 ### Security Best Practices
 
@@ -617,7 +617,7 @@ Response:
    - Regular backups
    - Encrypt sensitive data
 
-## 💻 Development
+## Development
 
 ### Running in Development Mode
 
@@ -671,7 +671,7 @@ Currently, the project doesn't include automated tests. For production:
 - Add integration tests for API endpoints
 - Add E2E tests for critical user flows
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -713,7 +713,7 @@ Currently, the project doesn't include automated tests. For production:
 4. Check [README-DOCKER.md](./README-DOCKER.md) for Docker-specific issues
 5. Check [ADMIN-SETUP.md](./ADMIN-SETUP.md) for admin setup issues
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -730,16 +730,16 @@ Currently, the project doesn't include automated tests. For production:
 - Add comments for complex logic
 - Keep functions focused and small
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
-## 📧 Contact
+## Contact
 
 For questions or issues, contact:
 - **Email**: petrosdawit00@gmail.com
 
-## 📚 Additional Documentation
+## Additional Documentation
 
 - [Docker Setup Guide](./README-DOCKER.md) - Detailed Docker deployment instructions
 - [Admin Setup Guide](./ADMIN-SETUP.md) - How to create and manage admin users
